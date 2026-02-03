@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "name": "Smartphone",
+    "price": 899.99,
+    "category": "Electronics",
+    "in_stock": true
+  },
+  {
+    "id": 2,
+    "name": "Wireless Headphones",
+    "price": 149.5,
+    "category": "Electronics",
+    "in_stock": true
+  },
+  {
+    "id": 3,
+    "name": "Smartwatch",
+    "price": 249.0,
+    "category": "Electronics",
+    "in_stock": false
+  },
+  {
+    "id": 4,
+    "name": "Tablet",
+    "price": 399.99,
+    "category": "Electronics",
+    "in_stock": true
+  },
+  {
+    "id": 5,
+    "name": "Portable Charger",
+    "price": 39.99,
+    "category": "Electronics",
+    "in_stock": true
+  }
+]
