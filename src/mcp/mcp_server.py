@@ -1,10 +1,14 @@
 from fastmcp import FastMCP
 import json
+import sys
 from typing import List, Dict
 from src.data.product import Product, CreateProductRequest
+import os
 
-JSON_FILE = "products.json"
 
+# Get the path relative to this file's location
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+JSON_FILE = os.path.join(CURRENT_DIR, "..", "data", "products.json")
 
 # --- Server Setup ---
 mcp = FastMCP("MCP")
@@ -16,11 +20,11 @@ try:
         raw = json.load(file)
         products_data = [Product(**item) for item in raw]
 except (FileNotFoundError, FileExistsError):
-    print("Can't find file, starting with empty database.")
+    print("Can't find file, starting with empty database.", file=sys.stderr)
 except json.JSONDecodeError:
-    print("Can't decode json, starting with empty database.")
+    print("Can't decode json, starting with empty database.", file=sys.stderr)
 except Exception as e:
-    print(f"Data validation error: {e}")
+    print(f"Data validation error: {e}", file=sys.stderr)
 
 # These functions are NOT decorated. They are pure Python --> for testing
 
@@ -79,8 +83,13 @@ def get_product(product_id: int) -> Product:
 
 
 @mcp.tool()
-def add_product(request: CreateProductRequest) -> Product:
+def add_product(
+    name: str, price: float, category: str, in_stock: bool = True
+) -> Product:
     """Add a new product. ID is auto-generated."""
+    request = CreateProductRequest(
+        name=name, price=price, category=category, in_stock=in_stock
+    )
     return _add_product_logic(request)
 
 
@@ -88,3 +97,7 @@ def add_product(request: CreateProductRequest) -> Product:
 def get_stats() -> Dict[str, float]:
     """Get database statistics."""
     return _get_stats_logic()
+
+
+if __name__ == "__main__":
+    mcp.run()
