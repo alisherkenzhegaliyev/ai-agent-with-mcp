@@ -1,25 +1,9 @@
 from fastmcp import FastMCP
 import json
-from pydantic import BaseModel
 from typing import List, Dict
+from src.data.product import Product, CreateProductRequest
 
 JSON_FILE = "products.json"
-
-
-# --- Data Schemas ---
-class Product(BaseModel):
-    id: int
-    name: str
-    price: float
-    category: str
-    in_stock: bool
-
-
-class CreateProductRequest(BaseModel):
-    name: str
-    price: float
-    category: str
-    in_stock: bool
 
 
 # --- Server Setup ---
@@ -38,37 +22,21 @@ except json.JSONDecodeError:
 except Exception as e:
     print(f"Data validation error: {e}")
 
-# --- Tools ---
+# These functions are NOT decorated. They are pure Python --> for testing
 
 
-@mcp.tool()
-def list_products() -> List[Product]:
-    """
-    List all available products in the database.
-    Returns a list of Product objects.
-    """
+def _list_products_logic() -> List[Product]:
     return products_data
 
 
-@mcp.tool()
-def get_product(product_id: int) -> Product:
-    """
-    Get a single product by its unique ID.
-    Raises ValueError if the product is not found.
-    """
+def _get_product_logic(product_id: int) -> Product:
     for p in products_data:
         if p.id == product_id:
             return p
-
     raise ValueError(f"Product with ID {product_id} not found")
 
 
-@mcp.tool()
-def add_product(request: CreateProductRequest) -> Product:
-    """
-    Add a new product to the database.
-    The ID is auto-generated based on the current highest ID.
-    """
+def _add_product_logic(request: CreateProductRequest) -> Product:
     new_id = 1
     if products_data:
         new_id = max(p.id for p in products_data) + 1
@@ -83,14 +51,8 @@ def add_product(request: CreateProductRequest) -> Product:
     return product
 
 
-@mcp.tool()
-def get_stats() -> Dict[str, float]:
-    """
-    Get database statistics including total count and average price.
-    Returns a dictionary with 'total_products' and 'average_price'.
-    """
+def _get_stats_logic() -> Dict[str, float]:
     total_count = len(products_data)
-
     if total_count == 0:
         return {"total_products": 0, "average_price": 0.0}
 
@@ -98,3 +60,31 @@ def get_stats() -> Dict[str, float]:
     average_price = total_price / total_count
 
     return {"total_products": total_count, "average_price": round(average_price, 2)}
+
+
+# --- MCP TOOLS ---
+# These just wrap the logic for the AI.
+
+
+@mcp.tool()
+def list_products() -> List[Product]:
+    """List all available products in the database."""
+    return _list_products_logic()
+
+
+@mcp.tool()
+def get_product(product_id: int) -> Product:
+    """Get a single product by its unique ID."""
+    return _get_product_logic(product_id)
+
+
+@mcp.tool()
+def add_product(request: CreateProductRequest) -> Product:
+    """Add a new product. ID is auto-generated."""
+    return _add_product_logic(request)
+
+
+@mcp.tool()
+def get_stats() -> Dict[str, float]:
+    """Get database statistics."""
+    return _get_stats_logic()
