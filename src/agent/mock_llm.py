@@ -179,20 +179,34 @@ class MockChatModel(BaseChatModel):
         # Try to extract: name, price, category
         name, price, category = None, None, None
 
-        # Pattern 1: Structured format
-        # "add product: Mouse, price 1500, category Electronics"
-        name_match = re.search(r"(?:product:|item:|name:)?\s*([A-Za-z\s]+?)(?:,|price|for|\d)", text)
+        # Extract price first (more reliable)
         price_match = re.search(r"(?:price|cost|for)\s*:?\s*\$?(\d+(?:\.\d+)?)", text)
+        if price_match:
+            price = float(price_match.group(1))
+
+        # Extract category
         category_match = re.search(
             r"(?:category|in|type)\s*:?\s*([A-Za-z\s]+?)(?:,|$|\s+in_stock)", text
         )
-
-        if name_match:
-            name = name_match.group(1).strip()
-        if price_match:
-            price = float(price_match.group(1))
         if category_match:
             category = category_match.group(1).strip()
+
+        # Extract name - look for the word after product:/item: or between action word and price/category
+        # Pattern 1: "product: Mouse" or "item: Keyboard"
+        name_match = re.search(r"(?:product|item|name)\s*:\s*([A-Za-z][A-Za-z0-9\s]*?)(?:\s*,|\s+price|\s+for|\s+category|\s+\d)", text)
+        
+        if not name_match:
+            # Pattern 2: Word(s) after add/create/new but before price/category/numbers
+            name_match = re.search(r"(?:add|create|new|insert|register)(?:\s+(?:a|an|new))?\s+(?:product|item)?\s*:?\s*([A-Za-z][A-Za-z0-9\s]*?)(?:\s*,|\s+price|\s+for|\s+category|\s+in\s+|\s*\d)", text)
+        
+        if name_match:
+            name = name_match.group(1).strip()
+            # Remove common command words that might have been captured
+            for word in ["add", "create", "new", "product", "item", "insert", "register"]:
+                if name.lower().endswith(word):
+                    name = name[:-len(word)].strip()
+                if name.lower().startswith(word):
+                    name = name[len(word):].strip()
 
         # Only proceed if we have at least name and price
         if name and price:

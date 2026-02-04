@@ -33,5 +33,19 @@
     "price": 39.99,
     "category": "Electronics",
     "in_stock": true
+  },
+  {
+    "id": 6,
+    "name": "add mouse",
+    "price": 1250.0,
+    "category": "electronics",
+    "in_stock": true
+  },
+  {
+    "id": 7,
+    "name": "keyboard",
+    "price": 1250.0,
+    "category": "electronics",
+    "in_stock": true
   }
 ]

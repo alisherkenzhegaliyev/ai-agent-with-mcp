@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, mock_open
-from src.mcp.mcp_server import (
+from src.producer_mcp.mcp_server import (
     # Import the LOGIC functions, not the TOOLS
     _list_products_logic,
     _get_product_logic,
@@ -9,7 +9,7 @@ from src.mcp.mcp_server import (
     CreateProductRequest,
     Product,
 )
-import src.mcp.mcp_server as server_module
+import src.producer_mcp.mcp_server as server_module
 
 # --- Fixtures ---
 

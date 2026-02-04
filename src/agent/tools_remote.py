@@ -10,7 +10,7 @@ current_file = os.path.abspath(__file__)
 agent_dir = os.path.dirname(current_file)
 src_dir = os.path.dirname(agent_dir)
 project_root = os.path.dirname(src_dir)
-server_script = os.path.join(src_dir, "mcp", "mcp_server.py")
+server_script = os.path.join(src_dir, "producer_mcp", "mcp_server.py")
 
 env = os.environ.copy()
 env["PYTHONPATH"] = project_root

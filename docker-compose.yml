@@ -1,0 +1,10 @@
+services:
+  agent-api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount src for development (optional - remove for production)
+      - ./src:/app/src
+    environment:
+      - PYTHONUNBUFFERED=1
