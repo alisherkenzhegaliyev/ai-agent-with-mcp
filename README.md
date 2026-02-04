@@ -119,6 +119,10 @@ pytest tests/test_sqlite_bonus.py -v      # SQLite concurrency & performance
 
 ## Usage Examples
 
+<img width="1053" height="879" alt="Screenshot 2026-02-04 at 17 45 59" src="https://github.com/user-attachments/assets/9fe2e241-d76f-4c58-b3ec-37f25b9cd0d3" />
+<img width="1061" height="878" alt="Screenshot 2026-02-04 at 17 46 07" src="https://github.com/user-attachments/assets/5f868aa1-5cf2-4e5d-927a-656a194b38ef" />
+
+
 ### Chat Interface (Browser)
 1. Open http://localhost:8000 in your browser
 2. Type queries naturally:
@@ -130,6 +134,7 @@ pytest tests/test_sqlite_bonus.py -v      # SQLite concurrency & performance
    - "make 15% discount on Mouse" (discount by product name)
 
 ### API Endpoint (cURL)
+<img width="917" height="488" alt="Screenshot 2026-02-04 at 17 46 46" src="https://github.com/user-attachments/assets/40a15dc0-130f-49d2-94e8-ec08bdcf8be4" />
 
 ```bash
 # List all products
@@ -232,6 +237,8 @@ ports:
 - Verify tools are registered: look for "Agent initialized with X tools"
 
 ### Database Issues
+<img width="834" height="75" alt="Screenshot 2026-02-04 at 17 47 09" src="https://github.com/user-attachments/assets/49250f16-3e3d-48e3-beaa-c87d8e5944ae" />
+
 ```bash
 # Reset database
 make clean-all  # Removes products.db and rebuilds from scratch
