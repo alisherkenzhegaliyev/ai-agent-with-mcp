@@ -59,18 +59,27 @@ class MockChatModel(BaseChatModel):
             add_match = self._match_add_product(text)
             if add_match:
                 return self._create_tool_call("add_product", add_match)
-
-            # Intent: Calculate discount
-            calc_match = self._match_calculator(text)
-            if calc_match:
-                return self._create_tool_call("calculator", calc_match)
+            
+            # Intent: Discount on product ID (need to look up product first)
+            # Check this BEFORE calculator to prioritize product-specific discounts
+            discount_by_id = self._match_discount_on_product_id(text)
+            if discount_by_id:
+                # Store the discount context for later use
+                self._context['discount_calc_by_id'] = discount_by_id
+                return self._create_tool_call("get_product", {"product_id": discount_by_id['product_id']})
             
             # Intent: Discount on product name (need to look up price first)
+            # Check this BEFORE calculator to prioritize product-specific discounts
             discount_product = self._match_discount_on_product(text)
             if discount_product:
                 # Store the discount context for later use
                 self._context['discount_calc'] = discount_product
                 return self._create_tool_call("list_products", {})
+
+            # Intent: Calculate discount (generic calculation without product reference)
+            calc_match = self._match_calculator(text)
+            if calc_match:
+                return self._create_tool_call("calculator", calc_match)
 
         # --- PHASE 2: React to Tool Output ---
         elif isinstance(last_message, ToolMessage):
@@ -86,6 +95,14 @@ class MockChatModel(BaseChatModel):
         """Tries to parse JSON and make it readable."""
         try:
             data = json.loads(output)
+
+            # Check if this was a discount calculation by ID request
+            if 'discount_calc_by_id' in self._context and isinstance(data, dict) and 'id' in data:
+                discount_info = self._context.pop('discount_calc_by_id')
+                discount_percent = discount_info['discount']
+                original_price = data['price']
+                discounted_price = original_price * (1 - discount_percent / 100)
+                return f"The {data['name']} costs ${original_price}. With a {discount_percent}% discount, the price would be ${discounted_price:.2f}."
 
             # Check if this was a discount calculation request
             if 'discount_calc' in self._context and isinstance(data, list):
@@ -108,13 +125,16 @@ class MockChatModel(BaseChatModel):
                     return f"I couldn't find a product matching '{discount_info['product_name']}' in the catalog."
 
             # Case 1: List of Products
-            if isinstance(data, list) and len(data) > 0 and "name" in data[0]:
-                lines = ["Here are the products I found:"]
-                for item in data:
-                    lines.append(
-                        f"• {item['name']} (${item['price']}) - {item['category']}"
-                    )
-                return "\n".join(lines)
+            if isinstance(data, list):
+                if len(data) == 0:
+                    return "The database is currently empty. No products found."
+                if "name" in data[0]:
+                    lines = ["Here are the products I found:"]
+                    for item in data:
+                        lines.append(
+                            f"• {item['name']} (${item['price']}) - {item['category']}"
+                        )
+                    return "\n".join(lines)
 
             # Case 2: Stats Dictionary
             if isinstance(data, dict) and "total_products" in data:
@@ -123,6 +143,10 @@ class MockChatModel(BaseChatModel):
             # Case 3: Single Product (Add Product Result)
             if isinstance(data, dict) and "id" in data:
                 return f"Successfully added '{data['name']}' (ID: {data['id']}) to the catalog."
+            
+            # Case 4: Empty dict (no content returned)
+            if isinstance(data, dict) and len(data) == 0:
+                return "The database is currently empty. No products found."
 
         except json.JSONDecodeError:
             pass
@@ -219,6 +243,33 @@ class MockChatModel(BaseChatModel):
 
         return None
 
+    def _match_discount_on_product_id(self, text: str) -> Optional[dict]:
+        """Detect discount on product ID like 'calculate 15% discount on id 1' or 'make 15% discount on product 1'."""  
+        if "discount" not in text:
+            return None
+        
+        # Extract discount percentage
+        discount_match = re.search(r"(\d+)%?", text)
+        if not discount_match:
+            return None
+        
+        discount_value = float(discount_match.group(1))
+        
+        # Extract product ID - ONLY match when there's an explicit product reference
+        # Patterns: 'on id 1', 'on product 1', 'for id 1', 'on #1'
+        # Do NOT match bare numbers like 'on 100' (that's for calculator)
+        id_match = re.search(r"(?:on|for)\s+(?:id|product|#)\s*(\d+)\b", text)
+        if id_match:
+            potential_id = int(id_match.group(1))
+            # Make sure it's not the discount percentage we're matching
+            if potential_id != discount_value:
+                return {
+                    "discount": discount_value,
+                    "product_id": potential_id
+                }
+        
+        return None
+    
     def _match_discount_on_product(self, text: str) -> Optional[dict]:
         """Detect discount on product name like 'calculate 15% discount on keyboard'."""
         if "discount" not in text:

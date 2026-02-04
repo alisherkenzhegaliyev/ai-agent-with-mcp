@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs test clean
+.PHONY: help build up down restart logs test clean clean-all
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -6,6 +6,13 @@ help: ## Show this help message
 
 build: ## Build Docker image
 	docker-compose build
+
+build-fresh: ## Clean everything and build from scratch
+	@echo "Cleaning everything..."
+	@make clean-all
+	@echo "Building fresh Docker image..."
+	docker-compose build --no-cache
+	@echo "Fresh build complete"
 
 up: ## Start the application
 	docker-compose up
@@ -25,11 +32,19 @@ logs: ## Show application logs
 test: ## Run pytest tests
 	python3 -m pytest
 
-test-cov: ## Run tests with coverage
-	python3 -m pytest --cov=src --cov-report=html
+test-sqlite: ## Test SQLite implementation (Bonus 1)
+	python3 -m pytest tests/test_sqlite_bonus.py -v
 
 clean: ## Remove Docker containers and images
 	docker-compose down -v --rmi all
+
+clean-all: ## Complete cleanup (containers, volumes, images, networks, DB)
+	@echo "Performing complete cleanup..."
+	docker-compose down -v --rmi all --remove-orphans
+	rm -f src/data/products.db src/data/products.db-journal
+	rm -rf __pycache__ src/__pycache__ src/*/__pycache__ src/*/*/__pycache__ tests/__pycache__
+	rm -rf .pytest_cache htmlcov .coverage
+	@echo "Cleanup complete"
 
 shell: ## Open shell in running container
 	docker-compose exec agent-api /bin/bash

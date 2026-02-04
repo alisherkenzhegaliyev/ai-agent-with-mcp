@@ -13,7 +13,8 @@ project_root = os.path.dirname(src_dir)
 server_script = os.path.join(src_dir, "producer_mcp", "mcp_server.py")
 
 env = os.environ.copy()
-env["PYTHONPATH"] = project_root
+# Set PYTHONPATH to /app in Docker, otherwise use project_root
+env["PYTHONPATH"] = os.environ.get("PYTHONPATH", project_root)
 
 server_params = StdioServerParameters(
     command=sys.executable, args=[server_script], env=env
@@ -57,7 +58,7 @@ class MCPConnection:
             if hasattr(result, "isError") and result.isError:
                 return f"Error: {result.content[0].text}"
             if not result.content:
-                return "Success"
+                return "{}"  # Return empty JSON instead of "Success"
             return result.content[0].text
         except Exception as e:
             return f"System Error: {str(e)}"

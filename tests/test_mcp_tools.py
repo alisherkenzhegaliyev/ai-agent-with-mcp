@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import patch, mock_open
 from src.producer_mcp.mcp_server import (
     # Import the LOGIC functions, not the TOOLS
     _list_products_logic,
@@ -9,17 +8,27 @@ from src.producer_mcp.mcp_server import (
     CreateProductRequest,
     Product,
 )
-import src.producer_mcp.mcp_server as server_module
+from src.data.db import engine, Base, get_db, Product as DBProduct
 
 # --- Fixtures ---
 
 
 @pytest.fixture(autouse=True)
 def reset_db():
-    server_module.products_data = [
-        Product(id=1, name="Test Phone", price=100.0, category="Tech", in_stock=True),
-        Product(id=2, name="Test Laptop", price=500.0, category="Tech", in_stock=False),
-    ]
+    """Setup test database with fresh data for each test."""
+    # Drop all tables and recreate
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    
+    # Add test data
+    with get_db() as db:
+        db.add(DBProduct(id=1, name="Test Phone", price=100.0, category="Tech", in_stock=True))
+        db.add(DBProduct(id=2, name="Test Laptop", price=500.0, category="Tech", in_stock=False))
+    
+    yield
+    
+    # Cleanup after test
+    Base.metadata.drop_all(bind=engine)
 
 
 # --- Tests ---
@@ -47,16 +56,18 @@ def test_get_product_not_found():
 
 def test_add_product():
     """It should add a product and generate a new ID."""
-    with patch("builtins.open", mock_open()):
-        new_request = CreateProductRequest(
-            name="New Gadget", price=250.0, category="Home", in_stock=True
-        )
+    new_request = CreateProductRequest(
+        name="New Gadget", price=250.0, category="Home", in_stock=True
+    )
 
-        result = _add_product_logic(new_request)
+    result = _add_product_logic(new_request)
 
-        assert result.id == 3
-        assert result.name == "New Gadget"
-        assert len(server_module.products_data) == 3
+    assert result.id == 3  # Auto-incremented from existing 1, 2
+    assert result.name == "New Gadget"
+    
+    # Verify it's actually in the database
+    all_products = _list_products_logic()
+    assert len(all_products) == 3
 
 
 def test_get_stats():
@@ -68,7 +79,11 @@ def test_get_stats():
 
 def test_get_stats_empty():
     """It should handle empty database without crashing."""
-    server_module.products_data = []
+    # Clear the database
+    with get_db() as db:
+        db.query(DBProduct).delete()
+    
     stats = _get_stats_logic()
     assert stats["total_products"] == 0
+    assert stats["average_price"] == 0.0
     assert stats["average_price"] == 0.0

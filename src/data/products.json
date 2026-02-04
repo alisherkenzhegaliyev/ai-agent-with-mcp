@@ -54,5 +54,12 @@
     "price": 1500.0,
     "category": "clothing",
     "in_stock": true
+  },
+  {
+    "id": 9,
+    "name": "jeans",
+    "price": 100.0,
+    "category": "clothing",
+    "in_stock": true
   }
 ]

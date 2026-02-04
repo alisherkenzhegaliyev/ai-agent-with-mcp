@@ -100,7 +100,7 @@ def root():
                 if (toolCalls.length > 0) {
                     const toolDiv = document.createElement('div');
                     toolDiv.className = 'tool-calls';
-                    toolDiv.textContent = `🔧 Used tools: ${toolCalls.join(', ')}`;
+                    toolDiv.textContent = `Used tools: ${toolCalls.join(', ')}`;
                     messageDiv.appendChild(toolDiv);
                 }
                 
@@ -140,8 +140,14 @@ def root():
                     // Remove loading
                     chatContainer.removeChild(loadingDiv);
                     
+                    // Check for empty response
+                    let responseText = data.response;
+                    if (!responseText || responseText.trim() === '' || responseText === '{}' || responseText === '[]') {
+                        responseText = 'The database is currently empty. No products found. Try adding one with: "add product: Mouse, price 1500, category Electronics"';
+                    }
+                    
                     // Add agent response
-                    addMessage(data.response, false, data.tool_calls);
+                    addMessage(responseText, false, data.tool_calls);
                 } catch (error) {
                     chatContainer.removeChild(loadingDiv);
                     addMessage('Error: Could not connect to agent', false);
@@ -159,7 +165,7 @@ def root():
             });
 
             // Welcome message
-            addMessage('Hello! I can help you manage products. Try asking:\\n• "show all products"\\n• "make a 15% discount on Mouse"\\n• "what\\'s the average price?"\\n• "add product: Mouse, price 1500, category Electronics"', false);
+            addMessage('Hello! I can help you manage products. Try asking:\\n• "show all products"\\n• "make a 15% discount on Mouse (or id 1)"\\n• "what\\'s the average price?"\\n• "add product: Mouse, price 1500, category Electronics"', false);
         </script>
     </body>
     </html>

@@ -8,3 +8,4 @@ services:
       - ./src:/app/src
     environment:
       - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app

@@ -4,6 +4,9 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
+# Set PYTHONPATH so imports work in subprocesses
+ENV PYTHONPATH=/app
+
 # Copy requirements first (for Docker layer caching)
 COPY requirements.txt .
 

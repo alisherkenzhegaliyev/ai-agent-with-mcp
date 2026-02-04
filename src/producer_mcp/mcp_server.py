@@ -4,6 +4,13 @@ import sys
 from typing import List, Dict
 from src.data.product import Product, CreateProductRequest
 import os
+from src.config.logging import get_logger
+from src.data.db import get_db, Product as DBProduct, Base, engine
+
+logger = get_logger(__name__)
+
+# Initialize database tables
+Base.metadata.create_all(bind=engine)
 
 
 # Get the path relative to this file's location
@@ -30,40 +37,39 @@ except Exception as e:
 
 
 def _list_products_logic() -> List[Product]:
-    return products_data
+    with get_db() as db:
+        db_products = db.query(DBProduct).all()
+        return [Product(**{k: v for k, v in p.__dict__.items() if not k.startswith('_')}) 
+                for p in db_products]
 
 
 def _get_product_logic(product_id: int) -> Product:
-    for p in products_data:
-        if p.id == product_id:
-            return p
-    raise ValueError(f"Product with ID {product_id} not found")
+    with get_db() as db:
+        db_product = db.query(DBProduct).filter(DBProduct.id == product_id).first()
+        if not db_product:
+            raise ValueError(f"Product with ID {product_id} not found")
+        return Product(**{k: v for k, v in db_product.__dict__.items() if not k.startswith('_')})
 
 
 def _add_product_logic(request: CreateProductRequest) -> Product:
-    new_id = 1
-    if products_data:
-        new_id = max(p.id for p in products_data) + 1
-
-    product = Product(id=new_id, **request.model_dump())
-    products_data.append(product)
-
-    # Save to disk
-    with open(JSON_FILE, "w") as f:
-        f.write(json.dumps([p.model_dump() for p in products_data], indent=2))
-
-    return product
+    with get_db() as db:
+        db_product = DBProduct(**request.model_dump())
+        db.add(db_product)
+        db.flush()  # Get the ID without committing yet
+        result = Product(**{k: v for k, v in db_product.__dict__.items() if not k.startswith('_')})
+        return result
 
 
 def _get_stats_logic() -> Dict[str, float]:
-    total_count = len(products_data)
-    if total_count == 0:
-        return {"total_products": 0, "average_price": 0.0}
-
-    total_price = sum(p.price for p in products_data)
-    average_price = total_price / total_count
-
-    return {"total_products": total_count, "average_price": round(average_price, 2)}
+    with get_db() as db:
+        total_count = db.query(DBProduct).count()
+        if total_count == 0:
+            return {"total_products": 0, "average_price": 0.0}
+        
+        total_price = sum(p.price for p in db.query(DBProduct).all())
+        average_price = total_price / total_count
+        
+        return {"total_products": total_count, "average_price": round(average_price, 2)}
 
 
 # --- MCP TOOLS ---
@@ -73,12 +79,14 @@ def _get_stats_logic() -> Dict[str, float]:
 @mcp.tool()
 def list_products() -> List[Product]:
     """List all available products in the database."""
+    logger.info("Tool invoked: list_products")
     return _list_products_logic()
 
 
 @mcp.tool()
 def get_product(product_id: int) -> Product:
     """Get a single product by its unique ID."""
+    logger.info(f"Tool invoked: get_product(product_id={product_id})")
     return _get_product_logic(product_id)
 
 
@@ -87,6 +95,7 @@ def add_product(
     name: str, price: float, category: str, in_stock: bool = True
 ) -> Product:
     """Add a new product. ID is auto-generated."""
+    logger.info(f"Tool invoked: add_product(name={name}, price={price}, category={category})")
     request = CreateProductRequest(
         name=name, price=price, category=category, in_stock=in_stock
     )
@@ -96,6 +105,7 @@ def add_product(
 @mcp.tool()
 def get_stats() -> Dict[str, float]:
     """Get database statistics."""
+    logger.info("Tool invoked: get_stats")
     return _get_stats_logic()
 
 
