@@ -34,28 +34,28 @@ tests/
 
 ## Features
 
-### MCP Server (25 points)
+### MCP Server 
 - FastMCP with `@mcp.tool` decorators
 - 4 tools: `list_products`, `get_product`, `add_product`, `get_stats`
 - Communication via stdio transport
 - SQLite backend with SQLAlchemy ORM
 - Error handling with proper exceptions
 
-### LangGraph Agent (25 points)
+### LangGraph Agent
 - Connects to MCP server via stdio
 - Uses all 4 MCP tools dynamically
 - Custom tools: `calculator` (math operations), `formatter` (text formatting)
 - Mock LLM with regex-based NLU (no API keys needed)
 - Smart intent detection: distinguishes product-specific discounts from generic calculations
 
-### FastAPI + Docker (20 points)
+### FastAPI + Docker 
 - `POST /api/v1/agent/query` endpoint with proper request/response models
 - Interactive HTML chat interface at root (`/`)
 - Dockerfile with Python 3.11-slim
 - docker-compose.yml with volume mounts for persistence
 - Runs successfully with `docker-compose up`
 
-### Bonus 1: SQLite Persistence (5 points)
+### SQLite Persistence
 - SQLAlchemy ORM with Product model
 - Connection pooling for concurrent writes (pool_size=10, timeout=30s)
 - Context managers with automatic commit/rollback
