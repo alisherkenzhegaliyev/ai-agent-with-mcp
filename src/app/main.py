@@ -7,6 +7,11 @@ from langchain_core.messages import HumanMessage
 from contextlib import asynccontextmanager
 from typing import List, Optional
 from src.app.root import root
+from src.config.logging import setup_logging, get_logger
+
+# Setup logging
+setup_logging()
+logger = get_logger(__name__)
 
 class AgentQueryRequest(BaseModel):
     query: str
@@ -26,10 +31,14 @@ agent = None
 async def lifespan(app: FastAPI):
     # Startup: Build the agent
     global agent
+    logger.info("Starting FastAPI application...")
     agent = await build_agent()
+    logger.info("Agent initialized successfully")
     yield
     # Shutdown: Close MCP connection
+    logger.info("Shutting down application...")
     await global_mcp.close()
+    logger.info("MCP connection closed")
 
 
 app = FastAPI(lifespan=lifespan)
@@ -41,7 +50,10 @@ def read_root():
 @app.post("/api/v1/agent/query", response_model=AgentQueryResponse)
 async def post(request: AgentQueryRequest):
     """Execute agent query and return response."""
+    logger.info(f"Received query: {request.query}")
+    
     if not agent:
+        logger.error("Agent not initialized")
         return {
             "query": request.query,
             "response": "Error: Agent not initialized",

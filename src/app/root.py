@@ -80,7 +80,7 @@ def root():
         </style>
     </head>
     <body>
-        <h1>🤖 Product Management Agent</h1>
+        <h1>Product Management Agent</h1>
         <div id="chat-container"></div>
         <div id="input-container">
             <input type="text" id="query-input" placeholder="Ask about products..." />

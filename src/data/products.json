@@ -47,5 +47,12 @@
     "price": 1250.0,
     "category": "electronics",
     "in_stock": true
+  },
+  {
+    "id": 8,
+    "name": "jordans",
+    "price": 1500.0,
+    "category": "clothing",
+    "in_stock": true
   }
 ]

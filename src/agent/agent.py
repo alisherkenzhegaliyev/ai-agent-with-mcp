@@ -7,20 +7,26 @@ from langchain_core.messages import HumanMessage
 from src.agent.tools_local import calculator, formatter
 from src.agent.tools_remote import get_langchain_tools
 from src.agent.mock_llm import MockChatModel
+from src.config.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 async def build_agent():
     """
     Constructs the compiled LangGraph agent with all tools loaded.
     """
+    logger.info("Building LangGraph agent...")
+    
     # 1. Load Tools
     # combine the local Python tools with the remote MCP tools
     remote_tools = await get_langchain_tools()
     local_tools = [calculator, formatter]
     all_tools = local_tools + remote_tools
 
-    print(f"Agent initialized with {len(all_tools)} tools:")
+    logger.info(f"Agent initialized with {len(all_tools)} tools:")
     for t in all_tools:
+        logger.info(f"  - {t.name}")
         print(f"  - {t.name}")
 
     # 2. Initialize the Brain (Mock LLM)
